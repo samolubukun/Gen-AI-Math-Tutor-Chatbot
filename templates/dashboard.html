@@ -523,24 +523,199 @@
             }
         }
 
-        // Load chat history
-        async function loadHistory() {
-            try {
-                const response = await fetch('/history');
-                if (response.ok) {
-                    const data = await response.json();
-                    // Update history display if needed
-                }
-            } catch (error) {
-                console.error('Error loading history:', error);
-            }
-        }
+// Updated JavaScript functions for history display functionality
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            renderMath();
-            loadHistory();
+// Load and display chat history
+async function loadHistory() {
+    try {
+        const response = await fetch('/history');
+        if (response.ok) {
+            const data = await response.json();
+            updateHistoryDisplay(data.chats);
+        } else {
+            console.error('Failed to load history:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error loading history:', error);
+    }
+}
+
+// Update the history display with new chat data
+function updateHistoryDisplay(chats) {
+    const historyContainer = document.getElementById('historyContainer');
+    
+    if (!chats || chats.length === 0) {
+        historyContainer.innerHTML = '<div class="text-muted small">No recent chats</div>';
+        return;
+    }
+    
+    historyContainer.innerHTML = '';
+    
+    chats.forEach(chat => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        historyItem.onclick = () => loadChat(chat._id, chat);
+        
+        // Format the timestamp
+        const timestamp = new Date(chat.timestamp);
+        const formattedTime = timestamp.toLocaleDateString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
         });
+        
+        // Truncate question if too long
+        const truncatedQuestion = chat.question.length > 50 
+            ? chat.question.substring(0, 50) + '...' 
+            : chat.question;
+        
+        historyItem.innerHTML = `
+            <div class="small text-muted">${formattedTime}</div>
+            <div>${truncatedQuestion}</div>
+            ${chat.has_image ? '<i class="fas fa-image text-info small"></i>' : ''}
+        `;
+        
+        historyContainer.appendChild(historyItem);
+    });
+}
+
+// Load a specific chat and display it in the chat window
+function loadChat(chatId, chatData = null) {
+    if (chatData) {
+        // If we have the chat data, display it directly
+        displayChatInWindow(chatData);
+    } else {
+        // If we don't have the data, we could fetch it from the server
+        // For now, we'll just show a message
+        addMessage('Loading chat history...', 'ai');
+    }
+}
+
+// Display a historical chat in the main chat window
+function displayChatInWindow(chat) {
+    // Add the historical question and answer to the chat
+    addMessage(chat.question, 'user');
+    addMessage(chat.answer, 'ai', chat.graph);
+    renderMath();
+}
+
+// Add a new chat to the history display (call this after sending a message)
+function addChatToHistory(question, answer, hasImage = false) {
+    const newChat = {
+        _id: Date.now().toString(), // Temporary ID for display
+        question: question,
+        answer: answer,
+        timestamp: new Date().toISOString(),
+        has_image: hasImage
+    };
+    
+    // Get current history
+    const historyContainer = document.getElementById('historyContainer');
+    const existingItems = historyContainer.children;
+    
+    // Create new history item
+    const historyItem = document.createElement('div');
+    historyItem.className = 'history-item';
+    historyItem.onclick = () => displayChatInWindow(newChat);
+    
+    const formattedTime = new Date().toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+    
+    const truncatedQuestion = question.length > 50 
+        ? question.substring(0, 50) + '...' 
+        : question;
+    
+    historyItem.innerHTML = `
+        <div class="small text-muted">${formattedTime}</div>
+        <div>${truncatedQuestion}</div>
+        ${hasImage ? '<i class="fas fa-image text-info small"></i>' : ''}
+    `;
+    
+    // Insert at the beginning (most recent first)
+    if (historyContainer.firstChild && historyContainer.firstChild.className !== 'text-muted') {
+        historyContainer.insertBefore(historyItem, historyContainer.firstChild);
+    } else {
+        // If container is empty or has placeholder text, replace content
+        historyContainer.innerHTML = '';
+        historyContainer.appendChild(historyItem);
+    }
+    
+    // Limit to 10 items
+    while (historyContainer.children.length > 10) {
+        historyContainer.removeChild(historyContainer.lastChild);
+    }
+}
+
+// Updated form submission handler (replace the existing one)
+document.getElementById('mathForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const question = document.getElementById('questionInput').value.trim();
+    if (!question) return;
+
+    const generateGraph = document.getElementById('generateGraph').checked;
+    const hasImage = currentImage !== null;
+    
+    // Add user message to chat
+    addMessage(question, 'user');
+    
+    // Show loading
+    const loadingId = addLoadingMessage();
+    
+    // Clear input
+    document.getElementById('questionInput').value = '';
+    document.getElementById('generateGraph').checked = false;
+    
+    try {
+        const formData = new FormData();
+        formData.append('question', question);
+        formData.append('generate_plot', generateGraph);
+        
+        if (currentImage) {
+            formData.append('image', currentImage);
+        }
+        
+        const response = await fetch('/ask', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            removeMessage(loadingId);
+            addMessage(data.answer, 'ai', data.graph);
+            renderMath();
+            
+            // Add to history display
+            addChatToHistory(question, data.answer, hasImage);
+        } else {
+            removeMessage(loadingId);
+            addMessage('Sorry, there was an error processing your request.', 'ai');
+        }
+    } catch (error) {
+        removeMessage(loadingId);
+        addMessage('Sorry, there was an error processing your request.', 'ai');
+    }
+    
+    // Clear uploaded image
+    clearImageUpload();
+});
+
+// Initialize - update the existing DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    renderMath();
+    loadHistory(); // This will now actually update the display
+    
+    // Refresh history every 30 seconds to catch updates from other sessions
+    setInterval(loadHistory, 30000);
+});
     </script>
 </body>
 </html>
