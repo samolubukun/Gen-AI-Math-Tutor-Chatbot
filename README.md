@@ -23,7 +23,9 @@ An advanced AI-powered math tutor web app built with **FastAPI**, leveraging **G
 
 
 ## 📸 Screenshots
+![Uploading png (2).png…]()
 
+![Uploading png (3).png…]()
 
 
 ## 🌐 Endpoints Overview
