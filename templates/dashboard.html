@@ -523,64 +523,23 @@
             }
         }
 
-// ... (your existing JavaScript code) ...
-
         // Load chat history
         async function loadHistory() {
             try {
-                const response = await fetch('/history'); // Assuming a /history endpoint
+                const response = await fetch('/history');
                 if (response.ok) {
                     const data = await response.json();
-                    const historyContainer = document.getElementById('historyContainer');
-                    historyContainer.innerHTML = ''; // Clear existing history
-                    data.recent_chats.forEach(chat => {
-                        const historyItem = document.createElement('div');
-                        historyItem.className = 'history-item';
-                        historyItem.onclick = () => loadChat(chat._id); // Assuming _id for chat identification
-                        
-                        // Format the timestamp for display
-                        const date = new Date(chat.timestamp.$date); // Assuming timestamp is a MongoDB Date object
-                        const formattedTime = date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }) + ' ' +
-                                            date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-                        historyItem.innerHTML = `
-                            <div class="small text-muted">${formattedTime}</div>
-                            <div>${chat.question.substring(0, 50)}${chat.question.length > 50 ? '...' : ''}</div>
-                        `;
-                        historyContainer.appendChild(historyItem);
-                    });
+                    // Update history display if needed
                 }
             } catch (error) {
                 console.error('Error loading history:', error);
             }
         }
 
-        // Function to load a specific chat from history
-        async function loadChat(chatId) {
-            try {
-                const response = await fetch(`/chat/${chatId}`); // Assuming a /chat/{id} endpoint
-                if (response.ok) {
-                    const data = await response.json();
-                    clearChat(); // Clear current chat
-                    // Add AI initial message back if desired, or handle dynamically
-                    
-                    data.messages.forEach(msg => {
-                        addMessage(msg.content, msg.type, msg.graph);
-                    });
-                    renderMath();
-                } else {
-                    console.error('Error loading chat:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error loading chat:', error);
-            }
-        }
-
-
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             renderMath();
-            loadHistory(); // Call loadHistory on page load to populate the sidebar
+            loadHistory();
         });
     </script>
 </body>
