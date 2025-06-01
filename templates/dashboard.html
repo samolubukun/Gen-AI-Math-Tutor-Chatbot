@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Math Tutor Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --bg: #0f172a;
+            --surface: #1e293b;
+        }
+
+        body {
+            background: var(--bg);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(30, 41, 59, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .chat-container {
+            background: var(--surface);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 80%;
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .message.ai .message-bubble {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        .chat-input-form {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-group {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            padding: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-control {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            box-shadow: none;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 20px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .sidebar {
+            background: var(--surface);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .sidebar h5 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .feature-btn {
+            width: 100%;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .history-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .graph-container {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .graph-container img {
+            max-width: 100%;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .file-upload {
+            display: none;
+        }
+
+        .upload-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .upload-btn:hover {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .uploaded-image {
+            max-width: 200px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-brain me-2"></i>AI Math Tutor Pro
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    Welcome, {{ user.username }}!
+                </span>
+                <a class="nav-link" href="/logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="row">
+            <!-- Main Chat Area -->
+            <div class="col-lg-8 mb-4">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h4><i class="fas fa-comments me-2"></i>Math Tutor Chat</h4>
+                        <button class="btn btn-outline-light btn-sm" onclick="clearChat()">
+                            <i class="fas fa-trash me-1"></i>Clear
+                        </button>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai">
+                            <div class="message-bubble">
+                                <p><strong>👋 Hello!</strong></p>
+                                <p>I'm your AI Math Tutor powered by Google's Gemini AI. I can help you with:</p>
+                                <ul>
+                                    <li>Step-by-step problem solving</li>
+                                    <li>Concept explanations</li>
+                                    <li>Graph generation</li>
+                                    <li>Image-based math problems</li>
+                                </ul>
+                                <p>What would you like to learn today?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-form">
+                        <form id="mathForm" enctype="multipart/form-data">
+                            <!-- Image Upload Area -->
+                            <div class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-camera me-2"></i>
+                                <span id="uploadText">Click to upload math problem image (optional)</span>
+                            </div>
+                            <input type="file" id="imageInput" class="file-upload" accept="image/*" onchange="handleImageUpload(this)">
+                            <div id="imagePreview"></div>
+
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="questionInput" 
+                                       placeholder="Ask me any math question..." required>
+                                <div class="input-group-append d-flex">
+                                    <div class="form-check align-self-center me-3">
+                                        <input class="form-check-input" type="checkbox" id="generateGraph">
+                                        <label class="form-check-label small" for="generateGraph">
+                                            📊 Graph
+                                        </label>
+                                    </div>
+                                    <button class="btn btn-send" type="submit">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="sidebar mb-4">
+                    <h5><i class="fas fa-magic me-2"></i>Quick Actions</h5>
+                    <button class="btn feature-btn" onclick="insertQuestion('Solve ∫ x² dx step by step')">
+                        <i class="fas fa-integral me-2"></i>Integration Example
+                    </button>
+                    <button class="btn feature-btn" onclick="insertQuestion('Find the derivative of sin(x²)')">
+                        <i class="fas fa-function me-2"></i>Derivative Example
+                    </button>
+                    <button class="btn feature-btn" onclick="insertQuestion('Explain eigenvectors and eigenvalues')">
+                        <i class="fas fa-vector-square me-2"></i>Linear Algebra
+                    </button>
+                    <button class="btn feature-btn" onclick="insertQuestion('Graph y = x² + 2x - 3')">
+                        <i class="fas fa-chart-line me-2"></i>Graphing Functions
+                    </button>
+                </div>
+
+                <div class="sidebar">
+                    <h5><i class="fas fa-history me-2"></i>Recent Chats</h5>
+                    <div id="historyContainer">
+                        {% for chat in recent_chats %}
+                        <div class="history-item" onclick="loadChat('{{ chat._id }}')">
+                            <div class="small text-muted">{{ chat.timestamp.strftime('%m/%d %H:%M') }}</div>
+                            <div>{{ chat.question[:50] }}{% if chat.question|length > 50 %}...{% endif %}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <script>
+        let currentImage = null;
+
+        // Handle form submission
+        document.getElementById('mathForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) return;
+
+            const generateGraph = document.getElementById('generateGraph').checked;
+            
+            // Add user message to chat
+            addMessage(question, 'user');
+            
+            // Show loading
+            const loadingId = addLoadingMessage();
+            
+            // Clear input
+            document.getElementById('questionInput').value = '';
+            document.getElementById('generateGraph').checked = false;
+            
+            try {
+                const formData = new FormData();
+                formData.append('question', question);
+                formData.append('generate_plot', generateGraph);
+                
+                if (currentImage) {
+                    formData.append('image', currentImage);
+                }
+                
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    removeMessage(loadingId);
+                    addMessage(data.answer, 'ai', data.graph);
+                    renderMath();
+                } else {
+                    removeMessage(loadingId);
+                    addMessage('Sorry, there was an error processing your request.', 'ai');
+                }
+            } catch (error) {
+                removeMessage(loadingId);
+                addMessage('Sorry, there was an error processing your request.', 'ai');
+            }
+            
+            // Clear uploaded image
+            clearImageUpload();
+        });
+
+        function addMessage(content, type, graph = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.id = `msg-${Date.now()}`;
+            
+            let graphHtml = '';
+            if (graph) {
+                graphHtml = `<div class="graph-container"><img src="${graph}" alt="Generated Graph"></div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${content}
+                    ${graphHtml}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return messageDiv.id;
+        }
+
+        function addLoadingMessage() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai';
+            const loadingId = `loading-${Date.now()}`;
+            messageDiv.id = loadingId;
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span class="ms-2">Thinking...</span>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return loadingId;
+        }
+
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.remove();
+            }
+        }
+
+        function insertQuestion(question) {
+            document.getElementById('questionInput').value = question;
+            document.getElementById('questionInput').focus();
+        }
+
+        function clearChat() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = `
+                <div class="message ai">
+                    <div class="message-bubble">
+                        <p><strong>👋 Hello!</strong></p>
+                        <p>I'm your AI Math Tutor powered by Google's Gemini AI. What would you like to learn today?</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                currentImage = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').innerHTML = `
+                        <div style="position: relative; display: inline-block;">
+                            <img src="${e.target.result}" class="uploaded-image" alt="Uploaded math problem">
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    style="position: absolute; top: -5px; right: -5px; border-radius: 50%; width: 25px; height: 25px; padding: 0;"
+                                    onclick="clearImageUpload()">×</button>
+                        </div>
+                    `;
+                    document.getElementById('uploadText').textContent = 'Image uploaded successfully!';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearImageUpload() {
+            currentImage = null;
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('uploadText').textContent = 'Click to upload math problem image (optional)';
+        }
+
+        function renderMath() {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$', right: '$', display: true},
+                        {left: ', right: ', display: false}
+                    ]
+                });
+            }
+        }
+
+        // Load chat history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/history');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update history display if needed
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderMath();
+            loadHistory();
+        });
+    </script>
+</body>
+</html>
