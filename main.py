@@ -28,7 +28,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Security
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this")
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -37,7 +37,11 @@ genai.configure(api_key=os.getenv("GOOGLE_AI_API_KEY"))
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # MongoDB Configuration
-MONGODB_URL = "mongodb+srv://samuel:samuelolubukun@cluster0.g8op9yf.mongodb.net/"
+MONGODB_URL = os.getenv("MONGODB_URL")
+
+if not MONGODB_URL:
+    raise ValueError("MONGODB_URL environment variable not set")
+
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.math_tutor_db
 users_collection = db.users
