@@ -1,11 +1,11 @@
 fastapi==0.104.1
-uvicorn[standard]==0.24.0
+uvicorn==0.24.0
 jinja2==3.1.2
 python-dotenv==1.0.0
 google-generativeai==0.3.2
 motor==3.3.2
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.3.0
+passlib==1.7.4  # Avoid [bcrypt] extras
+python-jose==3.3.0  # Without [cryptography] extras
 python-multipart==0.0.6
 matplotlib==3.8.2
 numpy==1.25.2
